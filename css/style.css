@@ -1000,6 +1000,11 @@ button.evidence-card:disabled {
   line-height: 1;
 }
 
+.toolbar-btn-back:disabled {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
 /* ===== Modals ===== */
 .modal {
   position: fixed;

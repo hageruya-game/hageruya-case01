@@ -51,6 +51,11 @@
   var choiceShownTime = 0;
   var OPTIONAL_SCENES = ["bookshelf", "kitchen", "medicine", "kenta_kitchen"];
 
+  /* ---------- Scene History (戻るボタン用) ---------- */
+  var sceneHistory = [];
+  var lastSceneSnapshot = null;
+  var MAX_HISTORY = 20;
+
   /* ---------- Case switching ---------- */
   var activeStory = STORY;
   var casePrefix = "hageruya_";
@@ -393,6 +398,14 @@
       var scene = activeStory.scenes[sceneId];
       if (!scene) return;
 
+      // 前シーンのスナップショットを履歴に積む
+      if (lastSceneSnapshot) {
+        sceneHistory.push(lastSceneSnapshot);
+        if (sceneHistory.length > MAX_HISTORY) sceneHistory.shift();
+        lastSceneSnapshot = null;
+      }
+      updateBackButton();
+
       // #041 Warning 演出
       if (sceneId === "c2_041_warning") {
         state.currentScene = sceneId;
@@ -466,8 +479,16 @@
       // Auto-save
       autoSave();
 
-      // Ending
+      // シーン進入後のスナップショットを取得（選択肢/パズル変更前の状態）
+      lastSceneSnapshot = {
+        sceneId: sceneId,
+        state: JSON.parse(JSON.stringify(state)),
+        backlog: backlog.slice()
+      };
+
+      // Ending（エンディングはスナップショット不要）
       if (scene.isEnding) {
+        lastSceneSnapshot = null;
         showEnding(scene.endingType || "normal");
         return;
       }
@@ -489,6 +510,46 @@
     } else {
       doGo();
     }
+  }
+
+  /* ---------- 戻るボタン ---------- */
+  function goBack() {
+    if (sceneHistory.length === 0) return;
+    var snapshot = sceneHistory.pop();
+
+    // state復元
+    state = JSON.parse(JSON.stringify(snapshot.state));
+    backlog = snapshot.backlog.slice();
+
+    // UI復元（goToSceneを通さないのでautoSaveは走らない）
+    closeAllModals();
+    updateSuspicionIndicator();
+    updateBackButton();
+
+    // シーン再描画（チャプターカード演出はスキップ）
+    var scene = activeStory.scenes[snapshot.sceneId];
+    if (!scene) return;
+
+    // 戻り先のスナップショットを保持（さらに戻れるように）
+    lastSceneSnapshot = {
+      sceneId: snapshot.sceneId,
+      state: JSON.parse(JSON.stringify(state)),
+      backlog: backlog.slice()
+    };
+
+    renderScene(scene, snapshot.sceneId, true);
+  }
+
+  function updateBackButton() {
+    var btn = $("btn-back");
+    if (!btn) return;
+    btn.disabled = sceneHistory.length === 0;
+  }
+
+  function clearSceneHistory() {
+    sceneHistory = [];
+    lastSceneSnapshot = null;
+    updateBackButton();
   }
 
   /* ---------- テキストグルーピング（段落単位表示） ---------- */
@@ -538,7 +599,7 @@
     return result;
   }
 
-  function renderScene(scene, sceneId) {
+  function renderScene(scene, sceneId, skipChapterCard) {
     // Chapter label
     var chLabel = activeStory.chapters[scene.chapter];
     els.chapterLabel.textContent = chLabel ? chLabel.label + "　" + chLabel.title : "";
@@ -563,7 +624,7 @@
     textIndex = 0;
     els.text.innerHTML = "";
 
-    if (scene.showChapter) {
+    if (scene.showChapter && !skipChapterCard) {
       showChapterCard(scene.chapter, function () {
         showScreen("game");
         showNextParagraph();
@@ -1338,6 +1399,7 @@
             e.stopPropagation();
             if (loadFromSlot(s)) {
               closeAllModals();
+              clearSceneHistory();
               updateSuspicionIndicator();
               goToScene(state.currentScene);
               notify("データを読み込みました");
@@ -2033,6 +2095,7 @@
       ensureAudio();
       AudioEngine.stopBGM();
       if (loadFromSlot("auto")) {
+        clearSceneHistory();
         updateSuspicionIndicator();
         goToScene(state.currentScene);
         notify("オートセーブから再開しました");
@@ -2167,9 +2230,18 @@
       showPuzzleHint();
     });
 
+    // 戻るボタン
+    $("btn-back").addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (sceneHistory.length === 0) return;
+      AudioEngine.playSFX("tap");
+      goBack();
+    });
+
     document.querySelectorAll(".toolbar-btn").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
+        if (!btn.dataset.action) return;
         AudioEngine.playSFX("tap");
         openModal(btn.dataset.action);
       });
@@ -2197,6 +2269,7 @@
     $("btn-restart").addEventListener("click", function () {
       dismissSequelHook();
       AudioEngine.stopBGM();
+      clearSceneHistory();
       showScreen("title");
       showBootSequence(function (name) {
         state = createInitialState();
@@ -2215,6 +2288,7 @@
     $("btn-to-title").addEventListener("click", function () {
       dismissSequelHook();
       AudioEngine.stopBGM();
+      clearSceneHistory();
       state = createInitialState();
       // Ensure boot sequence is cleaned up
       var bootEl = $("boot-sequence");
