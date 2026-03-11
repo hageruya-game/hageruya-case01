@@ -541,7 +541,7 @@ html, body {
 }
 
 .history-text {
-  color: var(--text-dim) !important;
+  color: #808088 !important;
   margin-bottom: 0.8em;
   display: block;
 }
@@ -1226,18 +1226,28 @@ button.evidence-card:disabled {
   padding: 1.5rem 0;
 }
 
-/* Backlog */
+/* Backlog — ハーフモーダル */
+#modal-backlog .modal-overlay {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+#modal-backlog .modal-content {
+  max-height: 45vh;
+}
+
 #backlog-list {
-  max-height: 50vh;
+  max-height: 35vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 .backlog-line {
-  padding: 0.35rem 0;
+  padding: 0.4rem 0.5rem;
   border-bottom: 1px solid var(--border);
-  font-size: 0.82rem;
-  line-height: 1.7;
+  font-size: 0.88rem;
+  line-height: 1.8;
 }
 
 .backlog-line:last-child {
@@ -1245,7 +1255,7 @@ button.evidence-card:disabled {
 }
 
 .backlog-narration .backlog-text {
-  color: var(--text-dim);
+  color: #909098;
 }
 
 .backlog-dialogue .backlog-speaker {
@@ -1255,6 +1265,14 @@ button.evidence-card:disabled {
 }
 
 .backlog-dialogue .backlog-text {
+  color: var(--text);
+}
+
+.backlog-recent {
+  border-left: 2px solid var(--gold-dim);
+}
+
+.backlog-recent.backlog-narration .backlog-text {
   color: var(--text);
 }
 

@@ -49,6 +49,7 @@
   let audioInitialized = false;
   let puzzleHintIndex = 0;
   var choiceShownTime = 0;
+  var userScrolled = false;
   var OPTIONAL_SCENES = ["bookshelf", "kitchen", "medicine", "kenta_kitchen"];
 
   /* ---------- Scene History (戻るボタン用) ---------- */
@@ -758,6 +759,7 @@
 
   /* ---------- Text display ---------- */
   function showNextParagraph() {
+    userScrolled = false;
     if (textIndex >= textQueue.length) {
       onTextComplete();
       return;
@@ -808,8 +810,10 @@
       if (charIndex < content.length) {
         span.textContent += content[charIndex];
         charIndex++;
-        var container = $("text-container");
-        container.scrollTop = container.scrollHeight;
+        if (!userScrolled) {
+          var container = $("text-container");
+          container.scrollTop = container.scrollHeight;
+        }
         var ch = content[charIndex - 1];
         var delay = TYPE_SPEED + Math.random() * TYPE_SPEED_VAR;
         if (ch === "\n") delay += 150;
@@ -1491,14 +1495,16 @@
       return;
     }
     container.innerHTML = "";
-    backlog.forEach(function (entry) {
+    var recentStart = Math.max(0, backlog.length - 5);
+    backlog.forEach(function (entry, i) {
       var div = document.createElement("div");
+      var recent = i >= recentStart ? " backlog-recent" : "";
       if (entry.speaker) {
-        div.className = "backlog-line backlog-dialogue";
+        div.className = "backlog-line backlog-dialogue" + recent;
         div.innerHTML = '<span class="backlog-speaker">' + escapeHtml(entry.speaker) + '</span>' +
           '<span class="backlog-text">「' + escapeHtml(entry.text) + '」</span>';
       } else {
-        div.className = "backlog-line backlog-narration";
+        div.className = "backlog-line backlog-narration" + recent;
         div.innerHTML = '<span class="backlog-text">' + escapeHtml(entry.text) + '</span>';
       }
       container.appendChild(div);
@@ -2189,6 +2195,17 @@
     }, { passive: true });
     els.evidence.addEventListener("touchend", function (e) {
       e.stopPropagation();
+    }, { passive: true });
+
+    // テキストエリアの手動スクロール検出（上スクロールで自動追従を一時停止）
+    var textContainer = $("text-container");
+    textContainer.addEventListener("scroll", function () {
+      var atBottom = textContainer.scrollHeight - textContainer.scrollTop - textContainer.clientHeight < 20;
+      if (!atBottom && isTyping) {
+        userScrolled = true;
+      } else if (atBottom) {
+        userScrolled = false;
+      }
     }, { passive: true });
 
     gameScreen.addEventListener("touchstart", function (e) {
