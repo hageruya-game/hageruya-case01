@@ -2370,7 +2370,7 @@
       }
     }, { passive: true });
 
-    var touchHandled = false;
+    var lastTouchTime = 0;
     gameScreen.addEventListener("touchend", function (e) {
       if (tapStartY === null) return;
       if (isInteractiveTarget(e.target)) { tapStartY = null; return; }
@@ -2380,14 +2380,14 @@
       // スクロール操作と区別：移動量が小さく、短時間のタッチのみタップ扱い
       if (dy < 30 && dt < 600) {
         e.preventDefault(); // 後続の click イベントを抑止して二重発火を防ぐ
-        touchHandled = true;
+        lastTouchTime = Date.now();
         handleTextTap();
       }
     }, { passive: false });
 
-    // マウス操作（PC）のフォールバック — touchend で処理済みなら無視
+    // マウス操作（PC）のフォールバック — 直近の touchend から短時間なら無視
     gameScreen.addEventListener("click", function (e) {
-      if (touchHandled) { touchHandled = false; return; }
+      if (Date.now() - lastTouchTime < 400) return;
       if (isInteractiveTarget(e.target)) return;
       handleTextTap();
     });
