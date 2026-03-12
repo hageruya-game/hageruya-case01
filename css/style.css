@@ -702,6 +702,37 @@ html, body {
   animation: puzzleShake 0.4s ease;
 }
 
+.quiz-feedback {
+  font-size: 0.82rem;
+  text-align: center;
+  padding: 0.5rem 0 0.2rem;
+  animation: quizFbIn 0.3s ease forwards;
+}
+
+.quiz-feedback-fail {
+  color: var(--danger);
+}
+
+.quiz-feedback-success {
+  color: var(--gold-light);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.quiz-feedback-out {
+  animation: quizFbOut 0.3s ease forwards;
+}
+
+@keyframes quizFbIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes quizFbOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 /* ===== Puzzle ===== */
 #puzzle-container {
   width: 100%;

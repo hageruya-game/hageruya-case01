@@ -158,7 +158,7 @@ const STORY = {
           { text: "青山 彩" },
           { text: "緑川健太" }
         ],
-        failText: "……違う。証言の時刻を整理し直せ。",
+        failText: "……違う。もう一度考えろ。",
         successText: "──麗華だ。22時に戻ったはずが、23時に人影が目撃されている。",
         successNext: "ch1_crime_scene"
       }
@@ -293,7 +293,7 @@ const STORY = {
           { text: "本当に外から侵入された" },
           { text: "経年劣化による傷" }
         ],
-        failText: "──鍵が内側からかかっている事実を忘れるな。",
+        failText: "……違う。事実を整理しろ。",
         successText: "──偽装だ。犯人は内部の人間だ。",
         successNext: "ch1_study_hub"
       }
@@ -609,7 +609,7 @@ const STORY = {
           { text: "DOLLAR" },
           { text: "BALLET" }
         ],
-        failText: "──違う。D→C、F→E……一文字ずつ戻せ。",
+        failText: "……違う。もう一度よく見ろ。",
         successText: "── CELLAR。ワインセラーだ。",
         successNext: "ch2_cipher_solved"
       },
@@ -806,7 +806,7 @@ const STORY = {
           { text: "犯人を現行犯で捕まえるため" },
           { text: "自分も死のうとしていた" }
         ],
-        failText: "──違う。黒崎の言葉を思い出せ。",
+        failText: "……違う。黒崎は何を守ろうとした？",
         successText: "──保険金だ。被害者のふりをして、ホテルを守ろうとした。",
         successNext: "ch3_owner_speaks_3"
       }
@@ -861,7 +861,7 @@ const STORY = {
           { text: "書斎" },
           { text: "厨房" }
         ],
-        failText: "……違う。暗号を思い出せ。",
+        failText: "……違う。考え直せ。",
         successText: "──そうだ。ワインセラーだ。",
         successNext: "ch3_quiz_2"
       }
@@ -878,7 +878,7 @@ const STORY = {
           { text: "カメラの映像を消せた" },
           { text: "厨房から薬を持ち込めた" }
         ],
-        failText: "……それだけでは犯行の核心に届かない。",
+        failText: "……違う。セラーに入れた理由を考えろ。",
         successText: "──鍵だ。セラーに入れた人間は限られる。",
         successNext: "ch3_quiz_3"
       }
@@ -895,7 +895,7 @@ const STORY = {
           { text: "白石麗華（オーナーの妻）" },
           { text: "緑川健太（シェフ）" }
         ],
-        failText: "──違う。証拠の流れをもう一度たどれ。",
+        failText: "……違う。",
         successNext: "ch3_accusation_route"
       }
     },

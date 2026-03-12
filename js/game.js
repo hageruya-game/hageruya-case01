@@ -896,9 +896,6 @@
   /* ---------- Quiz (3択クイズ：不正解→即リトライ) ---------- */
   function showQuiz(quiz) {
     els.choices.innerHTML = "";
-    els.puzzleFeedback.textContent = "";
-    els.puzzleFeedback.className = "";
-    els.puzzle.classList.remove("visible");
     var locked = false;
 
     quiz.options.forEach(function (opt) {
@@ -908,6 +905,7 @@
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
         if (locked) return;
+        var fb = els.choices.querySelector(".quiz-feedback");
 
         if (opt.correct) {
           locked = true;
@@ -916,16 +914,15 @@
           els.choices.querySelectorAll(".choice-btn").forEach(function (b) {
             if (b !== btn) b.style.opacity = "0.3";
           });
+          if (fb) fb.remove();
           if (quiz.successText) {
-            els.puzzleFeedback.textContent = quiz.successText;
-            els.puzzleFeedback.classList.add("success");
-            els.puzzle.classList.add("visible");
+            var sfb = document.createElement("div");
+            sfb.className = "quiz-feedback quiz-feedback-success";
+            sfb.textContent = quiz.successText;
+            els.choices.appendChild(sfb);
           }
           setTimeout(function () {
             els.choices.classList.remove("visible");
-            els.puzzle.classList.remove("visible");
-            els.puzzleFeedback.textContent = "";
-            els.puzzleFeedback.className = "";
             goToScene(quiz.successNext, true);
           }, 800);
         } else {
@@ -933,15 +930,19 @@
           AudioEngine.playSFX("wrong");
           btn.classList.add("quiz-wrong");
           if (state.tracker) state.tracker.puzzleFailCount++;
-          els.puzzleFeedback.textContent = quiz.failText;
-          els.puzzleFeedback.classList.remove("success");
-          els.puzzle.classList.add("visible");
+          if (fb) fb.remove();
+          var nfb = document.createElement("div");
+          nfb.className = "quiz-feedback quiz-feedback-fail";
+          nfb.textContent = quiz.failText;
+          els.choices.appendChild(nfb);
           setTimeout(function () {
             btn.classList.remove("quiz-wrong");
-            els.puzzleFeedback.textContent = "";
-            els.puzzle.classList.remove("visible");
+            if (nfb.parentNode) {
+              nfb.classList.add("quiz-feedback-out");
+              setTimeout(function () { if (nfb.parentNode) nfb.remove(); }, 300);
+            }
             locked = false;
-          }, 1000);
+          }, 1200);
         }
       });
       els.choices.appendChild(btn);
