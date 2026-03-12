@@ -1296,8 +1296,19 @@
   }
 
   /* ---------- Save / Load ---------- */
+  var autoSaveTimer = null;
   function autoSave() {
     saveToSlot("auto");
+    var el = $("autosave-indicator");
+    if (el) {
+      el.classList.remove("visible");
+      void el.offsetHeight;
+      el.classList.add("visible");
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(function () {
+        el.classList.remove("visible");
+      }, 1500);
+    }
   }
 
   function saveToSlot(slot) {
@@ -1465,15 +1476,22 @@
       return;
     }
 
-    var html = "";
-    for (var i = 0; i <= state.hintIndex && i < hints.length; i++) {
+    var shown = Math.min(state.hintIndex + 1, hints.length);
+    var html = '<div class="hint-counter">ヒント ' + shown + ' / ' + hints.length + '</div>';
+    for (var i = 0; i < shown; i++) {
       html += '<div class="hint-text" style="animation-delay:' + (i * 0.1) + 's">💡 ' +
         escapeHtml(hints[i]) + "</div>";
     }
     els.hintContent.innerHTML = html;
 
-    $("btn-next-hint").style.display =
-      state.hintIndex < hints.length - 1 ? "block" : "none";
+    var btnNext = $("btn-next-hint");
+    if (state.hintIndex < hints.length - 1) {
+      var remaining = hints.length - shown;
+      btnNext.textContent = "次のヒントを見る（残り " + remaining + "）";
+      btnNext.style.display = "block";
+    } else {
+      btnNext.style.display = "none";
+    }
   }
 
   /* ---------- Memo ---------- */

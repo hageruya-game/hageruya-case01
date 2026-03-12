@@ -1219,6 +1219,16 @@ button.evidence-card:disabled {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.hint-counter {
+  font-size: 0.72rem;
+  color: var(--gold-dim);
+  letter-spacing: 0.1em;
+  text-align: right;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+}
+
 .hint-empty {
   text-align: center;
   color: var(--text-dim);
@@ -1307,6 +1317,23 @@ button.evidence-card:disabled {
 
 #memo-textarea::placeholder {
   color: var(--text-dim);
+}
+
+/* ===== Autosave Indicator ===== */
+#autosave-indicator {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.8rem;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#autosave-indicator.visible {
+  opacity: 1;
 }
 
 /* ===== Notification ===== */
