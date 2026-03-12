@@ -1886,7 +1886,7 @@
     if (currentCase === 2) {
       // ── CASE_02 エンディング後の演出 ──
       if (endingType === "true" || endingType === "secret") {
-        // CASE_03 ティーザー
+        // CASE_03 余韻演出
         sq(function () { hook.classList.add("active"); }, 3000);
         sq(function () { $("sequel-glitch").classList.add("active"); }, 4500);
         sq(function () { $("sequel-system").classList.add("visible"); }, 6000);
@@ -1898,19 +1898,34 @@
           var line = $("sequel-line-2"); line.classList.add("typed");
           typeText(line, "SUBJECT #041 : IDENTIFIED", 60);
         }, 8500);
-        sq(function () { $("sequel-system").classList.add("fade-out"); }, 11000);
+        // SECRET限定：観察者の正体への疑念
+        if (endingType === "secret") {
+          sq(function () {
+            var warn = document.createElement("div");
+            warn.className = "sequel-system-line";
+            warn.classList.add("typed");
+            $("sequel-system").appendChild(warn);
+            typeText(warn, "WARNING : OBSERVER IDENTITY UNVERIFIED", 50);
+          }, 10000);
+          sq(function () { $("sequel-system").classList.add("fade-out"); }, 12500);
+        } else {
+          sq(function () { $("sequel-system").classList.add("fade-out"); }, 11000);
+        }
+        var narDelay = endingType === "secret" ? 14500 : 13000;
         sq(function () {
           var narEl = $("sequel-narrative");
           narEl.textContent = "";
           narEl.classList.add("visible");
           typeText(narEl, "管理者は本当に不在か？", 60);
-        }, 13000);
-        sq(function () { $("sequel-narrative").classList.add("fade-out"); }, 18000);
+        }, narDelay);
+        sq(function () { $("sequel-narrative").classList.add("fade-out"); }, narDelay + 5000);
         sq(function () {
           $("sequel-case").textContent = "CASE_03";
           $("sequel-subtitle").textContent = "THE OPERATOR";
+          var coming = $("sequel-coming");
+          if (coming) coming.textContent = "SUBJECT SYSTEM は稼働を続けている";
           $("sequel-title-block").classList.add("visible");
-        }, 19500);
+        }, narDelay + 6500);
       } else if (endingType === "normal") {
         sq(function () { hook.classList.add("active"); }, 4000);
         sq(function () { $("sequel-glitch").classList.add("active"); }, 5500);
