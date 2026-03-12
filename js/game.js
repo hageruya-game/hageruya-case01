@@ -1276,7 +1276,7 @@
       return;
     }
 
-    selector.style.display = "";
+    selector.style.display = "flex";
     btn2.classList.remove("locked");
 
     // Active state
