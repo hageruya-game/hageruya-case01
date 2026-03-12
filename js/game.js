@@ -2059,7 +2059,13 @@
     // ブートスプラッシュ（CSSアニメーション終了後に削除）
     var splash = document.getElementById("boot-splash");
     if (splash) {
-      splash.addEventListener("animationend", function () { splash.remove(); });
+      var removeSplash = function () {
+        if (splash && splash.parentNode) splash.remove();
+      };
+      splash.addEventListener("animationend", removeSplash);
+      splash.addEventListener("webkitAnimationEnd", removeSplash);
+      // フォールバック: animationendが発火しない環境用
+      setTimeout(removeSplash, 2000);
     }
 
     initParticles();
