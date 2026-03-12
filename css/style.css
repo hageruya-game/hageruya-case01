@@ -99,7 +99,7 @@ html, body {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.25);
   z-index: 0;
 }
 
@@ -171,11 +171,11 @@ html, body {
 }
 
 .title-main {
-  font-size: 64px;
+  font-size: 58px;
   font-weight: 700;
   color: #d0d0d8;
   letter-spacing: 0.15em;
-  text-shadow: 0 0 30px rgba(180,180,200,0.15), 0 2px 8px rgba(0,0,0,0.7);
+  text-shadow: 0 0 25px rgba(180,180,200,0.12), 0 1px 4px rgba(0,0,0,0.45);
   opacity: 0;
   animation: titleMainIn 1s 1.8s ease forwards;
 }
