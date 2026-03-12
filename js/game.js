@@ -874,6 +874,8 @@
 
     if (hasVisibleChoices(scene)) {
       showChoices(scene.choices);
+    } else if (scene.quiz) {
+      showQuiz(scene.quiz);
     } else if (scene.puzzle) {
       showPuzzle(scene.puzzle);
     } else if (scene.evidencePuzzle) {
@@ -889,6 +891,63 @@
         }
       }
     }
+  }
+
+  /* ---------- Quiz (3択クイズ：不正解→即リトライ) ---------- */
+  function showQuiz(quiz) {
+    els.choices.innerHTML = "";
+    els.puzzleFeedback.textContent = "";
+    els.puzzleFeedback.className = "";
+    els.puzzle.classList.remove("visible");
+    var locked = false;
+
+    quiz.options.forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = opt.text;
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (locked) return;
+
+        if (opt.correct) {
+          locked = true;
+          AudioEngine.playSFX("correct");
+          btn.classList.add("selected");
+          els.choices.querySelectorAll(".choice-btn").forEach(function (b) {
+            if (b !== btn) b.style.opacity = "0.3";
+          });
+          if (quiz.successText) {
+            els.puzzleFeedback.textContent = quiz.successText;
+            els.puzzleFeedback.classList.add("success");
+            els.puzzle.classList.add("visible");
+          }
+          setTimeout(function () {
+            els.choices.classList.remove("visible");
+            els.puzzle.classList.remove("visible");
+            els.puzzleFeedback.textContent = "";
+            els.puzzleFeedback.className = "";
+            goToScene(quiz.successNext, true);
+          }, 800);
+        } else {
+          locked = true;
+          AudioEngine.playSFX("wrong");
+          btn.classList.add("quiz-wrong");
+          if (state.tracker) state.tracker.puzzleFailCount++;
+          els.puzzleFeedback.textContent = quiz.failText;
+          els.puzzleFeedback.classList.remove("success");
+          els.puzzle.classList.add("visible");
+          setTimeout(function () {
+            btn.classList.remove("quiz-wrong");
+            els.puzzleFeedback.textContent = "";
+            els.puzzle.classList.remove("visible");
+            locked = false;
+          }, 1000);
+        }
+      });
+      els.choices.appendChild(btn);
+    });
+
+    els.choices.classList.add("visible");
   }
 
   /* ---------- Choices ---------- */

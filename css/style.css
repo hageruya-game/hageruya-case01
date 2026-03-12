@@ -697,6 +697,11 @@ html, body {
   opacity: 1;
 }
 
+.choice-btn.quiz-wrong {
+  border-color: var(--danger);
+  animation: puzzleShake 0.4s ease;
+}
+
 /* ===== Puzzle ===== */
 #puzzle-container {
   width: 100%;
