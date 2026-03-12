@@ -1499,6 +1499,31 @@ button.evidence-card:disabled {
   100% { opacity: 1; }
 }
 
+/* ===== Insight Indicator ===== */
+.insight-indicator {
+  display: none;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  opacity: 0.8;
+  transition: opacity 0.3s, color 0.3s;
+}
+
+.insight-indicator.visible {
+  display: block;
+}
+
+.insight-indicator.insight-low {
+  color: var(--danger);
+  animation: insightPulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes insightPulse {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
 /* ===== Memory Section in Clues ===== */
 .memory-section-header {
   font-family: var(--font-sans);

@@ -14,6 +14,7 @@
       endingFlags: {},     // エンディング条件（将来拡張用）
       suspicionLevel: 0,  // 疑惑レベル (0〜5)
       suspicionFlags: {}, // 疑惑関連フラグ
+      insight: 5,         // 洞察レベル (0〜5, CASE_01用)
       memoryFragments: [], // 記憶の断片 [{id, text, chapter}]
       memo: "",
       hintIndex: 0,
@@ -56,6 +57,7 @@
   var sceneHistory = [];
   var lastSceneSnapshot = null;
   var MAX_HISTORY = 20;
+  var sceneTransitioning = false; // シーン遷移中のタップ抑止フラグ
 
   /* ---------- Case switching ---------- */
   var activeStory = STORY;
@@ -165,6 +167,23 @@
     }
   }
 
+  function updateInsightIndicator() {
+    var el = $("insight-indicator");
+    if (!el) return;
+    if (currentCase !== 1) { el.classList.remove("visible"); return; }
+    var diamonds = "";
+    for (var i = 0; i < 5; i++) {
+      diamonds += i < state.insight ? "◆" : "◇";
+    }
+    el.textContent = "洞察 " + diamonds;
+    el.classList.add("visible");
+    if (state.insight <= 2) {
+      el.classList.add("insight-low");
+    } else {
+      el.classList.remove("insight-low");
+    }
+  }
+
   function notifyStyled(msg, style) {
     els.notifText.textContent = msg;
     els.notification.className = "notification" + (style ? " " + style : "");
@@ -255,10 +274,14 @@
 
   /* ---------- Scene transition flash ---------- */
   function flashTransition(callback) {
+    sceneTransitioning = true;
     els.sceneFlash.classList.add("active");
     setTimeout(function () {
       callback();
-      setTimeout(function () { els.sceneFlash.classList.remove("active"); }, 80);
+      setTimeout(function () {
+        els.sceneFlash.classList.remove("active");
+        sceneTransitioning = false;
+      }, 80);
     }, 250);
   }
 
@@ -397,7 +420,7 @@
   function goToScene(sceneId, useFlash) {
     var doGo = function () {
       var scene = activeStory.scenes[sceneId];
-      if (!scene) return;
+      if (!scene) { sceneTransitioning = false; return; }
 
       // 前シーンのスナップショットを履歴に積む
       if (lastSceneSnapshot) {
@@ -460,8 +483,9 @@
         }, 1200);
       }
 
-      // Update suspicion indicator
+      // Update indicators
       updateSuspicionIndicator();
+      updateInsightIndicator();
 
       // Collect clue
       if (scene.clue) {
@@ -492,6 +516,18 @@
         lastSceneSnapshot = null;
         showEnding(scene.endingType || "normal");
         return;
+      }
+
+      // CASE_01: epilogue_true の最終行を洞察レベルで差し替え
+      if (currentCase === 1 && sceneId === "epilogue_true" && scene.text && scene.text.length > 0) {
+        scene = JSON.parse(JSON.stringify(scene)); // 元データを壊さないようコピー
+        var lastIdx = scene.text.length - 1;
+        if (state.insight >= 5) {
+          scene.text[lastIdx] = "──すべてを見通した、という確信があった。";
+        } else if (state.insight <= 2) {
+          scene.text[lastIdx] = "──本当にこれで正しかったのか。答えは、まだ揺れている。";
+        }
+        // 3-4 はデフォルトテキストのまま
       }
 
       // Meta interrupt check
@@ -525,6 +561,7 @@
     // UI復元（goToSceneを通さないのでautoSaveは走らない）
     closeAllModals();
     updateSuspicionIndicator();
+    updateInsightIndicator();
     updateBackButton();
 
     // シーン再描画（チャプターカード演出はスキップ）
@@ -930,6 +967,10 @@
           AudioEngine.playSFX("wrong");
           btn.classList.add("quiz-wrong");
           if (state.tracker) state.tracker.puzzleFailCount++;
+          if (currentCase === 1 && state.insight > 0) {
+            state.insight--;
+            updateInsightIndicator();
+          }
           if (fb) fb.remove();
           var nfb = document.createElement("div");
           nfb.className = "quiz-feedback quiz-feedback-fail";
@@ -1487,6 +1528,7 @@
               closeAllModals();
               clearSceneHistory();
               updateSuspicionIndicator();
+              updateInsightIndicator();
               goToScene(state.currentScene);
               notify("データを読み込みました");
             }
@@ -1845,7 +1887,8 @@
         var profile = {
           tracker: JSON.parse(JSON.stringify(state.tracker)),
           playerType: diagnosePlayerType(),
-          endingType: endingType
+          endingType: endingType,
+          insight: state.insight
         };
         localStorage.setItem("hageruya_c1_profile", JSON.stringify(profile));
       } catch (e) { /* ignore */ }
@@ -2213,6 +2256,7 @@
       if (loadFromSlot("auto")) {
         clearSceneHistory();
         updateSuspicionIndicator();
+        updateInsightIndicator();
         goToScene(state.currentScene);
         notify("オートセーブから再開しました");
       } else {
@@ -2280,6 +2324,7 @@
 
     function handleTextTap() {
       ensureAudio();
+      if (sceneTransitioning) return;
       if (els.choices.classList.contains("visible")) return;
       if (els.puzzle.classList.contains("visible")) return;
       if (els.evidence.classList.contains("visible")) return;
@@ -2289,7 +2334,7 @@
 
       if (textIndex < textQueue.length) {
         advanceText();
-      } else if (resolveNext(scene) && !hasVisibleChoices(scene) && !scene.puzzle && !scene.evidencePuzzle) {
+      } else if (resolveNext(scene) && !hasVisibleChoices(scene) && !scene.quiz && !scene.puzzle && !scene.evidencePuzzle) {
         AudioEngine.playSFX("tap");
         goToScene(resolveNext(scene), true);
       }
@@ -2325,6 +2370,7 @@
       }
     }, { passive: true });
 
+    var touchHandled = false;
     gameScreen.addEventListener("touchend", function (e) {
       if (tapStartY === null) return;
       if (isInteractiveTarget(e.target)) { tapStartY = null; return; }
@@ -2334,12 +2380,14 @@
       // スクロール操作と区別：移動量が小さく、短時間のタッチのみタップ扱い
       if (dy < 30 && dt < 600) {
         e.preventDefault(); // 後続の click イベントを抑止して二重発火を防ぐ
+        touchHandled = true;
         handleTextTap();
       }
     }, { passive: false });
 
-    // マウス操作（PC）のフォールバック
+    // マウス操作（PC）のフォールバック — touchend で処理済みなら無視
     gameScreen.addEventListener("click", function (e) {
+      if (touchHandled) { touchHandled = false; return; }
       if (isInteractiveTarget(e.target)) return;
       handleTextTap();
     });
