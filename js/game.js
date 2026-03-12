@@ -50,7 +50,7 @@
   let puzzleHintIndex = 0;
   var choiceShownTime = 0;
   var userScrolled = false;
-  var OPTIONAL_SCENES = ["bookshelf", "kitchen", "medicine", "kenta_kitchen"];
+  var OPTIONAL_SCENES = ["kitchen", "kenta_kitchen"];
 
   /* ---------- Scene History (戻るボタン用) ---------- */
   var sceneHistory = [];
@@ -1227,27 +1227,35 @@
     // Clear record
     var record = loadClearRecord();
     var html = "";
-    var anyCleared = record.normal_end || record.true_end || record.bad_end || record.secret_end;
-    if (anyCleared) {
-      if (record.bad_end) {
-        html += '<div class="clear-record-item achieved">◆ BAD END 到達済</div>';
-      } else {
-        html += '<div class="clear-record-item">◇ BAD END ──</div>';
-      }
-      if (record.normal_end) {
-        html += '<div class="clear-record-item achieved">◆ NORMAL END 到達済</div>';
-      } else {
-        html += '<div class="clear-record-item">◇ NORMAL END ──</div>';
-      }
+    if (currentCase === 1) {
+      // CASE_01: エンディングは1つのみ
       if (record.true_end) {
-        html += '<div class="clear-record-item achieved">◆ TRUE END 到達済 ── 事件解決</div>';
-      } else {
-        html += '<div class="clear-record-item">◇ TRUE END ── 事件解決</div>';
+        html += '<div class="clear-record-item achieved">◆ CASE_01 クリア済</div>';
       }
-      if (record.secret_end) {
-        html += '<div class="clear-record-item achieved">◆ SECRET END 到達済 ── 真の結末</div>';
-      } else {
-        html += '<div class="clear-record-item">◇ SECRET END ── 真の結末</div>';
+    } else {
+      // CASE_02: 4エンディング
+      var anyCleared = record.normal_end || record.true_end || record.bad_end || record.secret_end;
+      if (anyCleared) {
+        if (record.bad_end) {
+          html += '<div class="clear-record-item achieved">◆ BAD END 到達済</div>';
+        } else {
+          html += '<div class="clear-record-item">◇ BAD END ──</div>';
+        }
+        if (record.normal_end) {
+          html += '<div class="clear-record-item achieved">◆ NORMAL END 到達済</div>';
+        } else {
+          html += '<div class="clear-record-item">◇ NORMAL END ──</div>';
+        }
+        if (record.true_end) {
+          html += '<div class="clear-record-item achieved">◆ TRUE END 到達済 ── 事件解決</div>';
+        } else {
+          html += '<div class="clear-record-item">◇ TRUE END ── 事件解決</div>';
+        }
+        if (record.secret_end) {
+          html += '<div class="clear-record-item achieved">◆ SECRET END 到達済 ── 真の結末</div>';
+        } else {
+          html += '<div class="clear-record-item">◇ SECRET END ── 真の結末</div>';
+        }
       }
     }
     els.titleClearRecord.innerHTML = html;

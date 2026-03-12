@@ -220,13 +220,12 @@ const STORY = {
       text: [
         "──他にも気になる場所がある。"
       ],
-      hints: ["机と窓は必ず調べよう。本棚にも何かあるかもしれない。"],
+      hints: ["机、窓、本棚──すべて調べよう。"],
       next: "ch1_end_auto",
       choices: [
         { text: "机を調べる", next: "ch1_desk", condition: "!desk_done" },
         { text: "窓を調べる", next: "ch1_window", condition: "!window_done" },
-        { text: "本棚を調べる", next: "ch1_bookshelf", condition: "!bookshelf_done" },
-        { text: "調査を切り上げる", next: "ch1_end_partial", condition: "desk_done&&window_done&&!bookshelf_done" }
+        { text: "本棚を調べる", next: "ch1_bookshelf", condition: "!bookshelf_done" }
       ]
     },
 
@@ -444,12 +443,12 @@ const STORY = {
         "あのメモの筆跡が気になる。そして、まだ調べるべき場所がある。"
       ],
       hints: [
-        "以前、毒物の本を見つけていたなら、薬品棚を調べてみる価値がある。"
+        "薬品棚は重要だ。厨房も調べる価値があるかもしれない。"
       ],
       choices: [
-        { text: "厨房を調べる", next: "ch2_kenta_kitchen" },
-        { text: "薬品棚を調べる", next: "ch2_medicine", condition: "clue:bookshelf_toxin", choiceId: "ch2_investigate_medicine" },
-        { text: "推理を進める", next: "npc_suspicion_reika" }
+        { text: "薬品棚を調べる", next: "ch2_medicine", condition: "!medicine_checked" },
+        { text: "厨房を調べる", next: "ch2_kenta_kitchen", condition: "!kitchen_checked" },
+        { text: "推理を進める", next: "npc_suspicion_reika", condition: "medicine_checked" }
       ]
     },
 
@@ -532,12 +531,11 @@ const STORY = {
       next: "ch2_revelation"
     },
 
-    /* ---- 手がかり所持時のみ到達可能 ---- */
+    /* ---- 薬品棚調査（必須） ---- */
     ch2_medicine: {
       chapter: 2,
       flag: "medicine_checked",
       text: [
-        "本棚で見つけた『毒物学入門』を思い出す。睡眠薬──トリアゾラム。",
         "書斎の奥にある薬品棚を開ける。小さな錠前は壊れていた。",
         "棚の奥に褐色の小瓶。ラベルには「トリアゾラム 0.25mg」と印字されている。",
         "瓶は半分ほど空だ。そして傍らの薬品管理簿を開くと──",
@@ -546,7 +544,7 @@ const STORY = {
       ],
       clue: { id: "medicine_evidence", text: "薬品棚のトリアゾラム（睡眠薬）管理簿に赤坂の署名" },
       hints: ["これは犯人を特定する重要な物証だ。"],
-      next: "npc_suspicion_reika"
+      next: "ch2_after_puzzle"
     },
 
     ch2_revelation: {
@@ -859,16 +857,12 @@ const STORY = {
       ]
     },
 
-    /* ---- 赤坂告発ルーティング（条件分岐） ---- */
-    /* 判定: TRUE（物証あり） → NORMAL（物証なし） */
+    /* ---- 赤坂告発 → TRUE END へ直行 ---- */
     ch3_accusation_route: {
       chapter: 3,
       flag: "accused_akasaka",
       text: [],
-      nextConditions: [
-        { condition: "clue:medicine_evidence", next: "ch3_accusation_true" },
-        { next: "ch3_accusation_normal" }
-      ]
+      next: "ch3_accusation_true"
     },
 
     /* ---- TRUE ルート（物証あり） ---- */
@@ -917,55 +911,30 @@ const STORY = {
       text: []
     },
 
-    /* ---- NORMAL ルート（状況証拠のみ） ---- */
+    /* ---- NORMAL ルート（廃止：旧セーブ互換のため定義は残す） ---- */
+    /* ch3_accusation_normal / epilogue_normal / normal_ending は到達不能 */
+    /*
     ch3_accusation_normal: {
       chapter: 3,
-      text: [
-        "「犯人は──あなたです、赤坂さん」",
-        "一瞬の沈黙。赤坂はゆっくりと眼鏡の位置を直した。",
-        "{赤坂}……何を根拠に、そう仰るのですか？",
-        "「ワインに手を加える機会があったのはあなたです。セラーの鍵を持ち、ワインを最初に扱った」",
-        "「防犯カメラの映像を消去できたのもあなた。そして動機──ホテルの売却を止めるためだ」",
-        "{赤坂}……それは状況証拠に過ぎません。",
-        "赤坂の声は平静だが、握られた拳が微かに震えていた。",
-        "「では、なぜ売却の書類がオーナーの引き出しに隠されていたのですか」",
-        "{赤坂}売却書類は……オーナーが自分で保管していただけでしょう。",
-        "「しかし書類は鍵のかかった引き出しの中に『隠されて』いた。そしてその暗証番号を知っていたのは──」",
-        "赤坂の眼鏡の奥で、何かが揺れた。",
-        "「あなたは売却を知っていた。そして、止めようとした」",
-        "長い、長い沈黙。暖炉の火がパチリと弾ける。",
-        "{赤坂}……参りました。",
-        "赤坂はゆっくりと目を閉じた。",
-        "{赤坂}このホテルは、私の人生そのものだった。それだけは……信じてください。",
-        "赤坂は静かに語り始めた。だが、どこか歯切れが悪い。",
-        "あなたの胸に、微かな引っかかりが残った。もっと決定的な証拠があったのではないか、と。"
-      ],
-      next: "epilogue_normal"
+      text: [],
+      next: "ch3_accusation_true"
     },
-
     epilogue_normal: {
       chapter: 3,
-      text: [
-        "──事件は一応の決着を見た。",
-        "「紅蓮の星」は赤坂の自室から発見された。",
-        "赤坂は罪を認めた。だがオーナー黒崎の告白が、事件の輪郭を歪めている。",
-        "被害者は本当に被害者だったのか。その問いが、小さな棘のように心に残っている。",
-        "ロビーの窓から差し込む朝日を浴びながら、あなたは振り返る。",
-        "書斎に、まだ見落としたものがあったのかもしれない──。"
-      ],
-      next: "normal_ending"
+      text: [],
+      next: "ch3_accusation_true"
     },
-
     normal_ending: {
       chapter: 3,
       isEnding: true,
       endingType: "normal",
       text: []
     },
+    */
 
     /* ==================== BAD END ルート ==================== */
 
-    /* ---- 麗華を告発 ---- */
+    /* ---- 麗華を告発 → リトライ ---- */
     ch3_bad_reika: {
       chapter: 3,
       text: [
@@ -974,12 +943,13 @@ const STORY = {
         "{麗華}……残念ね、探偵さん。私には動機がないわ。",
         "{麗華}夫との関係が悪くても、それは宝石を盗む理由にはならない。ましてや毒を盛るなんて。",
         "他の容疑者たちの視線が、あなたに突き刺さる。",
-        "沈黙が、あなたの推理の誤りを静かに証明していた。"
+        "沈黙が、あなたの推理の誤りを静かに証明していた。",
+        "──もう一度、考え直す必要がある。"
       ],
-      next: "ch3_bad_ending"
+      next: "ch3_final_puzzle"
     },
 
-    /* ---- 彩を告発 ---- */
+    /* ---- 彩を告発 → リトライ ---- */
     ch3_bad_aya: {
       chapter: 3,
       text: [
@@ -987,12 +957,13 @@ const STORY = {
         "彩は震えながらも、はっきりと否定した。",
         "{彩}私じゃありません……。私はただの画家です。ワインセラーの鍵も、薬品棚のことも知りません。",
         "{彩}私が廊下で見た人影のことを証言したのは、本当のことを話したかったからです。",
-        "彩の証言は他の証拠と矛盾しない。告発の根拠は崩れ去った。"
+        "彩の証言は他の証拠と矛盾しない。告発の根拠は崩れ去った。",
+        "──もう一度、考え直す必要がある。"
       ],
-      next: "ch3_bad_ending"
+      next: "ch3_final_puzzle"
     },
 
-    /* ---- 健太を告発 ---- */
+    /* ---- 健太を告発 → リトライ ---- */
     ch3_bad_kenta: {
       chapter: 3,
       text: [
@@ -1002,12 +973,13 @@ const STORY = {
         "{健太}薬の瓶は赤坂さんに預けられたものだ。メモの筆跡だって──",
         "健太は一瞬、赤坂の方を見た。だが赤坂は穏やかな表情を崩さない。",
         "{健太}……もういい。信じてもらえないなら、それでいい。",
-        "健太の証言を裏付ける証拠はない。あなたの推理は、巧妙に仕組まれた偽装に惑わされていた。"
+        "健太の証言を裏付ける証拠はない。あなたの推理は、巧妙に仕組まれた偽装に惑わされていた。",
+        "──もう一度、考え直す必要がある。"
       ],
-      next: "ch3_bad_ending"
+      next: "ch3_final_puzzle"
     },
 
-    /* ---- 自分を告発 ---- */
+    /* ---- 自分を告発 → リトライ ---- */
     ch3_bad_player: {
       chapter: 3,
       text: [
@@ -1019,28 +991,24 @@ const STORY = {
         "{麗華}正気なの？",
         "断片的な記憶が渦巻く。だが、確証は何もない。",
         "あなたの告白は、混乱と不信を招いただけだった。",
-        "事件の真相は、闇の中に沈んでいった。"
+        "──もう一度、考え直す必要がある。"
       ],
-      next: "ch3_bad_ending"
+      next: "ch3_final_puzzle"
     },
 
-    /* ---- BAD END 共通エピローグ ---- */
+    /* ---- BAD END 共通エピローグ（廃止：旧セーブ互換のため残す） ---- */
     ch3_bad_ending: {
       chapter: 3,
       text: [
-        "告発は失敗に終わった。",
-        "「紅蓮の星」は闇に消え、真犯人は依然としてこのホテルのどこかで静かに微笑んでいる。",
-        "あなたは雨の中、ホテルを後にした。",
-        "敗北の味が、喉の奥に苦く残っていた──。"
+        "──もう一度、考え直す必要がある。"
       ],
-      next: "bad_ending"
+      next: "ch3_final_puzzle"
     },
 
     bad_ending: {
       chapter: 3,
-      isEnding: true,
-      endingType: "bad",
-      text: []
+      text: [],
+      next: "ch3_final_puzzle"
     }
   }
 };
