@@ -920,12 +920,7 @@
     } else {
       var nextScene = resolveNext(scene);
       if (nextScene) {
-        // テキストが空のシーンは自動遷移（ハブの全条件不成立時など）
-        if (scene.text.length === 0) {
-          goToScene(nextScene, true);
-        } else {
-          els.tap.classList.add("visible");
-        }
+        goToScene(nextScene, true);
       }
     }
   }
@@ -961,7 +956,7 @@
           setTimeout(function () {
             els.choices.classList.remove("visible");
             goToScene(quiz.successNext, true);
-          }, 800);
+          }, 1500);
         } else {
           locked = true;
           AudioEngine.playSFX("wrong");
