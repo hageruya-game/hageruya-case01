@@ -1262,19 +1262,22 @@
   }
 
   function updateCaseSelector() {
+    var selector = $("case-selector");
     var btn1 = $("case-btn-1");
     var btn2 = $("case-btn-2");
-    if (!btn1 || !btn2) return;
+    if (!selector || !btn1 || !btn2) return;
 
     var hasProfile = false;
     try { hasProfile = !!localStorage.getItem("hageruya_c1_profile"); } catch (e) {}
 
-    // Unlock CASE_02 if c1_profile exists
-    if (hasProfile) {
-      btn2.classList.remove("locked");
-    } else {
-      btn2.classList.add("locked");
+    // Hide entire case selector until CASE_01 is cleared
+    if (!hasProfile) {
+      selector.style.display = "none";
+      return;
     }
+
+    selector.style.display = "";
+    btn2.classList.remove("locked");
 
     // Active state
     btn1.classList.toggle("active", currentCase === 1);
