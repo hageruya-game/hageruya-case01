@@ -85,6 +85,8 @@ html, body {
 #title-screen {
   background: #000;
   overflow: hidden;
+  justify-content: flex-start;
+  padding-top: 8vh;
 }
 
 #title-screen::before {
@@ -157,7 +159,7 @@ html, body {
 }
 
 .title-logo {
-  margin-bottom: 3.5rem;
+  margin-bottom: 2.5rem;
 }
 
 .title-studio {
