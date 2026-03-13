@@ -63,6 +63,7 @@
   var activeStory = STORY;
   var casePrefix = "hageruya_";
   var currentCase = 1;
+  var justClearedCase1 = false; // CASE_01初クリア直後フラグ
 
   function switchToCase(caseNum) {
     if (caseNum === 2 && typeof STORY_C2 !== "undefined") {
@@ -1326,7 +1327,13 @@
     if (currentCase === 1) {
       // CASE_01: エンディングは1つのみ
       if (record.true_end) {
-        html += '<div class="clear-record-item achieved">◆ CASE_01 クリア済</div>';
+        var insightStr = "";
+        try {
+          var prof = JSON.parse(localStorage.getItem("hageruya_c1_profile") || "{}");
+          var iv = typeof prof.insight === "number" ? prof.insight : 5;
+          for (var ii = 0; ii < 5; ii++) insightStr += ii < iv ? "◆" : "◇";
+        } catch (e) { insightStr = "◆◆◆◆◆"; }
+        html += '<div class="clear-record-item achieved">◆ CASE_01 クリア済（洞察 ' + insightStr + '）</div>';
       }
     } else {
       // CASE_02: 4エンディング
@@ -1878,6 +1885,7 @@
 
     // CASE_01完了時にプロフィールをlocalStorageに保存
     if (currentCase === 1) {
+      if (endingType === "true") justClearedCase1 = true;
       try {
         var profile = {
           tracker: JSON.parse(JSON.stringify(state.tracker)),
@@ -1944,7 +1952,7 @@
           "オーナー黒崎は回復し、ホテルの売却を白紙に戻した。\n\n" +
           "あなたの推理は、一片の曇りもなく\n真実を照らし出した。\n\n" +
           "── TRUE END ──";
-        if (els.endingSubtitle) els.endingSubtitle.textContent = "事件解決 ── 記憶の断片を辿れば、さらなる真相が";
+        if (els.endingSubtitle) els.endingSubtitle.textContent = "事件解決 ── CASE_02 が解放されました";
       } else if (endingType === "bad") {
         els.endingText.textContent =
           "あなたの告発は、沈黙で迎えられた。\n\n" +
@@ -2467,6 +2475,11 @@
       if (bootLines) bootLines.innerHTML = "";
       var titleContent = document.querySelector(".title-content");
       if (titleContent) titleContent.classList.remove("boot-active");
+      // CASE_01初クリア直後はCASE_02を選択状態にする
+      if (justClearedCase1 && typeof STORY_C2 !== "undefined") {
+        justClearedCase1 = false;
+        switchToCase(2);
+      }
       updateTitleScreen();
       updateCaseSelector();
       showScreen("title");
