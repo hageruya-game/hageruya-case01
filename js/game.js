@@ -171,12 +171,13 @@
   function updateInsightIndicator() {
     var el = $("insight-indicator");
     if (!el) return;
-    if (currentCase !== 1) { el.classList.remove("visible"); return; }
+    if (currentCase !== 1 && currentCase !== 2) { el.classList.remove("visible"); return; }
     var diamonds = "";
     for (var i = 0; i < 5; i++) {
       diamonds += i < state.insight ? "◆" : "◇";
     }
-    el.textContent = "洞察 " + diamonds;
+    var label = currentCase === 2 ? "適性" : "洞察";
+    el.textContent = label + " " + diamonds;
     el.classList.add("visible");
     if (state.insight <= 2) {
       el.classList.add("insight-low");
@@ -211,6 +212,7 @@
       if (p.startsWith("memory:"))     return hasMemory(p.slice(7));
       if (p.startsWith("c1_type:"))    return state.c1Profile && state.c1Profile.playerType === p.slice(8);
       if (p.startsWith("c1_ending:"))  return state.c1Profile && state.c1Profile.endingType === p.slice(10);
+      if (p.startsWith("insight:"))    return state.insight >= parseInt(p.slice(8), 10);
       if (p.startsWith("!"))           return !state.flags[p.slice(1)];
       return !!state.flags[p];
     });
@@ -419,6 +421,21 @@
 
   /* ---------- Scene rendering ---------- */
   function goToScene(sceneId, useFlash) {
+    // CASE_02: ゲームオーバーからの再スタート
+    if (sceneId === "c2_restart_trigger") {
+      var pName = state.playerName;
+      state = createInitialState();
+      state.playerName = pName;
+      state.tracker.startTime = Date.now();
+      try {
+        var raw = localStorage.getItem("hageruya_c1_profile");
+        if (raw) state.c1Profile = JSON.parse(raw);
+      } catch (e) { /* ignore */ }
+      updateInsightIndicator();
+      updateSuspicionIndicator();
+      goToScene("c2_intro");
+      return;
+    }
     var doGo = function () {
       var scene = activeStory.scenes[sceneId];
       if (!scene) { sceneTransitioning = false; return; }
@@ -963,13 +980,23 @@
           AudioEngine.playSFX("wrong");
           btn.classList.add("quiz-wrong");
           if (state.tracker) state.tracker.puzzleFailCount++;
-          if (currentCase === 1 && state.insight > 0) {
+          if (state.insight > 0) {
             state.insight--;
             updateInsightIndicator();
           }
           if (fb) fb.remove();
           var nfb = document.createElement("div");
           nfb.className = "quiz-feedback quiz-feedback-fail";
+          // CASE_02: 適性値0でゲームオーバー
+          if (currentCase === 2 && state.insight <= 0) {
+            nfb.textContent = "適性値が基準を下回りました。";
+            els.choices.appendChild(nfb);
+            setTimeout(function () {
+              els.choices.classList.remove("visible");
+              goToScene("c2_gameover", true);
+            }, 1500);
+            return;
+          }
           nfb.textContent = quiz.failText;
           els.choices.appendChild(nfb);
           setTimeout(function () {
@@ -1701,6 +1728,63 @@
     var linesContainer = $("boot-lines");
     if (!content || !boot || !linesContainer) { callback("探偵"); return; }
 
+    // CASE_02: 名前入力なし。CASE_01のデータから名前を取得
+    if (currentCase === 2) {
+      var c2Name = "";
+      try {
+        var prof = JSON.parse(localStorage.getItem("hageruya_c1_profile") || "{}");
+        if (prof.playerName) c2Name = prof.playerName;
+      } catch (e) { /* ignore */ }
+      if (!c2Name) {
+        try {
+          var c1Save = JSON.parse(localStorage.getItem("hageruya_auto") || "{}");
+          if (c1Save && c1Save.state && c1Save.state.playerName) c2Name = c1Save.state.playerName;
+        } catch (e) { /* ignore */ }
+      }
+      c2Name = c2Name || "探偵";
+
+      bootTimers.forEach(clearTimeout);
+      bootTimers = [];
+      linesContainer.innerHTML = "";
+      content.classList.add("boot-active");
+
+      bootTimers.push(setTimeout(function () {
+        boot.classList.add("active");
+        var c2Lines = [
+          { text: "> 接続中…", delay: 400 },
+          { text: "> 被験者データ検索中…", delay: 2200 },
+          { text: "> 被験者 " + c2Name + " を認証… 完了", delay: 4000 }
+        ];
+        c2Lines.forEach(function (lineData) {
+          bootTimers.push(setTimeout(function () {
+            var div = document.createElement("div");
+            div.className = "boot-line";
+            linesContainer.appendChild(div);
+            var ci = 0;
+            function typeC2() {
+              if (ci < lineData.text.length) {
+                div.textContent += lineData.text[ci];
+                ci++;
+                bootTimers.push(setTimeout(typeC2, 40));
+              }
+            }
+            typeC2();
+          }, lineData.delay));
+        });
+        // 名前入力なしで自動進行
+        bootTimers.push(setTimeout(function () {
+          bootTimers.forEach(clearTimeout);
+          bootTimers = [];
+          boot.classList.remove("active");
+          linesContainer.innerHTML = "";
+          content.classList.remove("boot-active");
+          callback(c2Name);
+        }, 6500));
+      }, 400));
+      return;
+    }
+
+    // CASE_01: 従来の名前入力あり
     bootTimers.forEach(clearTimeout);
     bootTimers = [];
     linesContainer.innerHTML = "";
@@ -1891,7 +1975,8 @@
           tracker: JSON.parse(JSON.stringify(state.tracker)),
           playerType: diagnosePlayerType(),
           endingType: endingType,
-          insight: state.insight
+          insight: state.insight,
+          playerName: state.playerName
         };
         localStorage.setItem("hageruya_c1_profile", JSON.stringify(profile));
       } catch (e) { /* ignore */ }
@@ -1904,39 +1989,33 @@
       // CASE_02 エンディングテキスト
       if (endingType === "true") {
         els.endingText.textContent =
-          "すべての証拠が揃い、事件は解決した。\n\n" +
-          "黒田は自らの行為を認めた。\nSUBJECTシステムは完全停止された。\n\n" +
-          "5年間、誰にも管理されず\n動き続けた機械の沈黙。\n\n" +
+          "あなたはシステムを拒絶し、\n白い部屋を後にした。\n\n" +
+          "#041という番号が何を意味するのか、\nまだ完全にはわからない。\n\n" +
+          "だが──自分が誰であるかは、\n自分で決める。\n\n" +
           "── TRUE END ──";
-        if (els.endingSubtitle) els.endingSubtitle.textContent = "事件解決 ── 記憶の断片を辿れば、さらなる真相が";
+        if (els.endingSubtitle) els.endingSubtitle.textContent = "あなたは自分自身を取り戻した";
       } else if (endingType === "bad") {
         els.endingText.textContent =
-          "あなたの告発は、沈黙で迎えられた。\n\n" +
-          "真犯人は今もこの施設のどこかで、\n息を潜めている。\n\n" +
-          "SUBJECTシステムは──まだ、動いている。\n\n" +
+          "適合完了。\n\n" +
+          "白い部屋の椅子に座ったまま、\nあなたは動けなくなった。\n\n" +
+          "モニターの光だけが、\n静かに点滅を続けている。\n\n" +
           "── BAD END ──";
-        if (els.endingSubtitle) els.endingSubtitle.textContent = "ヒント：証拠をもう一度見直してみよう";
+        if (els.endingSubtitle) els.endingSubtitle.textContent = "ヒント：あなたは本当に被験体ですか？";
       } else if (endingType === "secret") {
         els.endingText.textContent =
-          "あなたは犯人を暴き、事件を解決した。\n" +
-          "だが──真の発見は、自分自身だった。\n\n" +
-          "被験者#041。\n" +
-          "消された記憶。椅子が覚えていた身体の形。\n" +
-          "あなたは実験の残滓そのものだった。\n\n" +
-          "探偵として。被験者として。\n" +
-          "そして──生還者として。\n\n" +
+          "「分類不能」──システムは、\nあなたを定義できなかった。\n\n" +
+          "被験体でも、探偵でもない。\nあなたはどちらでもあり、\nどちらでもなかった。\n\n" +
+          "自分の意思で立ち上がったあなたを、\nシステムは記録できなかった。\n\n" +
           "── SECRET END ──\n" +
           "── 被験者#041の記録は、ここに閉じられた ──";
         if (els.endingSubtitle) els.endingSubtitle.textContent = "すべての真相に到達した";
       } else {
         els.endingText.textContent =
-          "事件は決着した。だが──\n\n" +
-          "決定的な物証を見つけられなかったことが、\n" +
-          "小さな棘のように胸に残っている。\n\n" +
-          "薬品保管室に、まだ見落とした手がかりが\n" +
-          "眠っているのかもしれない。\n\n" +
+          "あなたは部屋を出た。\n\n" +
+          "だが、白い廊下はどこまでも続き、\n出口は見つからなかった。\n\n" +
+          "本当に出られたのか──\nその問いに、答えはない。\n\n" +
           "── NORMAL END ──";
-        if (els.endingSubtitle) els.endingSubtitle.textContent = "ヒント：薬品保管室をもっと丁寧に調べてみよう";
+        if (els.endingSubtitle) els.endingSubtitle.textContent = "ヒント：適性値を高く保ち、もう一度挑戦しよう";
       }
       if (endingType === "true" || endingType === "secret") {
         els.endingBanner.textContent = "SUBJECT | CASE_02";
@@ -2219,7 +2298,7 @@
         // Debug: 開始シーン指定
         var startScene = debugScene && activeStory.scenes[debugScene]
           ? debugScene
-          : (currentCase === 2 ? "c2_prologue" : "prologue");
+          : (currentCase === 2 ? "c2_intro" : "prologue");
         goToScene(startScene);
       };
       if (debugMode) {
@@ -2459,7 +2538,7 @@
             if (raw) state.c1Profile = JSON.parse(raw);
           } catch (e) { /* ignore */ }
         }
-        goToScene(currentCase === 2 ? "c2_prologue" : "prologue");
+        goToScene(currentCase === 2 ? "c2_intro" : "prologue");
       });
     });
 
