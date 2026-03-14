@@ -20,8 +20,6 @@
       hintIndex: 0,
       playerName: "",
       c1Profile: null,
-      c2_sceneVisits: {},    // CASE_02: シーン別訪問回数
-      c2_observations: [],   // CASE_02: 発火済み観察ID
       tracker: {
         startTime: 0,
         sceneCount: 0,
@@ -71,10 +69,12 @@
       activeStory = STORY_C2;
       casePrefix = "hageruya_c2_";
       currentCase = 2;
+      document.title = "SUBJECT | CASE_02";
     } else {
       activeStory = STORY;
       casePrefix = "hageruya_";
       currentCase = 1;
+      document.title = "SUBJECT | CASE_01";
     }
   }
 
@@ -464,11 +464,6 @@
       state.currentScene = sceneId;
       state.hintIndex = 0;
 
-      // CASE_02: シーン訪問カウント
-      if (currentCase === 2) {
-        state.c2_sceneVisits[sceneId] = (state.c2_sceneVisits[sceneId] || 0) + 1;
-      }
-
       // Tracker
       if (state.tracker) {
         state.tracker.sceneCount++;
@@ -697,83 +692,6 @@
       }
     }
 
-    // CASE_02: 観察ログチェック（テキスト表示開始後に遅延発火）
-    if (currentCase === 2) {
-      setTimeout(function () { checkC2Observation(sceneId); }, 2500);
-    }
-  }
-
-  /* ---------- CASE_02: SUBJECT SYSTEM 観察ログ ---------- */
-  var C2_OBS_TRIGGERS = [
-    {
-      id: "c2_obs_hub_revisit",
-      check: function () {
-        // 聞き込みハブを2回以上通過（同じ場所を何度も調べる）
-        return (state.c2_sceneVisits["c2_ch1_hub"] || 0) >= 2;
-      },
-      lines: ["観察ログ", "被験者 #041", "行動パターン: 反復探索を検出"]
-    },
-    {
-      id: "c2_obs_b2_entry",
-      check: function () {
-        // 危険な場所に入る
-        return (state.c2_sceneVisits["c2_ch2_b2_zone"] || 0) >= 1;
-      },
-      lines: ["観察ログ", "被験者 #041", "制限区域への侵入を記録"]
-    },
-    {
-      id: "c2_obs_deep_search",
-      check: function () {
-        // 薬品室を深く調べた
-        return (state.c2_sceneVisits["c2_ch2_pharmacy_deep"] || 0) >= 1;
-      },
-      lines: ["観察ログ", "被験者 #041", "探索深度 ── 通常値を超過"]
-    },
-    {
-      id: "c2_obs_psych_response",
-      check: function () {
-        // 心理質問に回答した
-        return (state.c2_sceneVisits["c2_psych_q1_yes"] || 0) >= 1 ||
-               (state.c2_sceneVisits["c2_psych_q1_no"] || 0) >= 1;
-      },
-      lines: ["観察ログ", "被験者 #041", "心理応答を記録 ── 分析中"]
-    },
-    {
-      id: "c2_obs_analysis_complete",
-      check: function () {
-        // 黒田告白後
-        return !!state.flags["c2_kuroda_confessed"];
-      },
-      lines: ["観察ログ", "被験者 #041", "行動分析 ── 完了"]
-    }
-  ];
-
-  function checkC2Observation(sceneId) {
-    if (currentCase !== 2) return;
-    if (evState) return; // パズル中は発火しない
-    if (sceneId === "c2_041_warning") return;
-
-    for (var i = 0; i < C2_OBS_TRIGGERS.length; i++) {
-      var t = C2_OBS_TRIGGERS[i];
-      if (state.c2_observations.indexOf(t.id) >= 0) continue;
-      if (t.check()) {
-        state.c2_observations.push(t.id);
-        showObservationLog(t.lines);
-        return; // 1シーンにつき1回まで
-      }
-    }
-  }
-
-  function showObservationLog(lines) {
-    var el = $("observation-log");
-    if (!el) return;
-    el.innerHTML = lines.map(function (l) {
-      return '<div class="obs-log-line">' + escapeHtml(l) + '</div>';
-    }).join("");
-    el.classList.add("active");
-    setTimeout(function () {
-      el.classList.remove("active");
-    }, 3500);
   }
 
   /* ---------- Meta Narrative Interrupt ---------- */
@@ -1029,6 +947,7 @@
   function showChoices(choices) {
     els.choices.innerHTML = "";
     choiceShownTime = Date.now();
+    var locked = false;
     var filtered = choices.filter(function (c) { return checkCondition(c.condition); });
 
     filtered.forEach(function (choice) {
@@ -1037,6 +956,8 @@
       btn.textContent = choice.text;
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
+        if (locked) return;
+        locked = true;
 
         // Track choice timing
         if (state.tracker && choiceShownTime) {
@@ -1297,6 +1218,7 @@
   // イベント委譲：evidence-container 上の click を一括処理
   els.evidence.addEventListener("click", function (e) {
     e.stopPropagation(); // gameScreen のハンドラに渡さない
+    if (!evState) return;
 
     // 候補カードがクリックされた？
     var cardBtn = e.target.closest("[data-evidence-id]");
