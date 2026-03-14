@@ -215,9 +215,9 @@ const STORY_C2 = {
       ],
       quiz: {
         options: [
+          { text: "恐怖", correct: true },
           { text: "安心" },
-          { text: "怒り" },
-          { text: "恐怖", correct: true }
+          { text: "怒り" }
         ],
         failText: "不正解。",
         successNext: "c2_test4_after"
