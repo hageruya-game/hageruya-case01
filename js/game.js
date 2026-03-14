@@ -2655,6 +2655,33 @@
     // 初期化：ミュートアイコン同期
     syncSoundIcons();
 
+    // デバッグモード: ?debug=c2 または ?debug=c2test4 等
+    var debugParam = new URLSearchParams(window.location.search).get("debug");
+    if (debugParam && debugParam.startsWith("c2") && typeof STORY_C2 !== "undefined") {
+      switchToCase(2);
+      state = createInitialState();
+      var debugName = "Unknown";
+      try {
+        var raw = localStorage.getItem("hageruya_c1_profile");
+        if (raw) {
+          var prof = JSON.parse(raw);
+          if (prof.playerName) debugName = prof.playerName;
+          state.c1Profile = prof;
+        }
+      } catch (e) { /* ignore */ }
+      state.playerName = debugName;
+      state.tracker.startTime = Date.now();
+      var debugScene = "c2_intro";
+      if (debugParam.length > 2) {
+        var target = "c2_" + debugParam.slice(2);
+        if (STORY_C2.scenes[target]) debugScene = target;
+      }
+      showScreen("game");
+      updateInsightIndicator();
+      goToScene(debugScene);
+      return;
+    }
+
     showScreen("title");
 
     // タイトル画面タッチでAudio初期化 + タイトルBGM開始
