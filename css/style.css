@@ -1624,6 +1624,57 @@ button.evidence-card:disabled {
   100% { text-shadow: 0 0 50px rgba(201,169,110,0.4), 0 0 100px rgba(201,169,110,0.15); opacity: 1; }
 }
 
+/* ===== CASE_02 遷移オーバーレイ ===== */
+.case2-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  opacity: 0;
+  transition: opacity 1s ease;
+  cursor: pointer;
+}
+.case2-transition.visible {
+  display: flex;
+  opacity: 1;
+}
+.case2-transition-text {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--text);
+  line-height: 2.4;
+  text-align: center;
+  white-space: pre-wrap;
+  padding: 0 2rem;
+  animation: endingFadeIn 2s ease forwards;
+}
+.case2-transition-tap {
+  margin-top: 2rem;
+  color: var(--gold-dim);
+  font-size: 0.85rem;
+  animation: tapBlink 1.5s ease-in-out infinite;
+}
+@keyframes tapBlink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.case2-transition-back {
+  position: absolute;
+  bottom: calc(2rem + var(--safe-bottom));
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+}
+
 /* ===== Sequel Hook ===== */
 .sequel-hook {
   position: fixed;

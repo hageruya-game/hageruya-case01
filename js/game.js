@@ -1964,6 +1964,17 @@
     });
   }
 
+  function showCase2Transition() {
+    var overlay = $("case2-transition");
+    var textEl = $("case2-transition-text");
+    if (!overlay || !textEl) return;
+    textEl.textContent = "おめでとう。\nいよいよ本番です。";
+    overlay.style.display = "flex";
+    requestAnimationFrame(function () {
+      overlay.classList.add("visible");
+    });
+  }
+
   function showEnding(endingType) {
     saveClearRecord(endingType);
 
@@ -2074,9 +2085,14 @@
     }
 
     // タップで閉じる
+    var hookCase = currentCase;
+    var hookEndingType = endingType;
     hook.addEventListener("click", function closeHook() {
       hook.removeEventListener("click", closeHook);
       dismissSequelHook();
+      if (hookCase === 1 && hookEndingType === "true" && typeof STORY_C2 !== "undefined") {
+        showCase2Transition();
+      }
     });
 
     if (currentCase === 2) {
@@ -2201,6 +2217,11 @@
           $("sequel-subtitle").textContent = "THE EXPERIMENT";
           $("sequel-title-block").classList.add("visible");
         }, 34500);
+        // CASE_02遷移オーバーレイを表示
+        sq(function () {
+          dismissSequelHook();
+          showCase2Transition();
+        }, 40000);
 
       } else if (endingType === "normal") {
         sq(function () { hook.classList.add("active"); }, 4000);
@@ -2564,6 +2585,60 @@
       showScreen("title");
       setTimeout(function () { AudioEngine.playBGM("title"); }, 600);
     });
+
+    // CASE_02遷移オーバーレイ
+    (function () {
+      var overlay = $("case2-transition");
+      var textEl = $("case2-transition-text");
+      var backBtn = $("case2-transition-back");
+      if (!overlay) return;
+
+      function startCase2() {
+        overlay.classList.remove("visible");
+        AudioEngine.stopBGM();
+        clearSceneHistory();
+        switchToCase(2);
+        showScreen("title");
+        showBootSequence(function (name) {
+          state = createInitialState();
+          state.playerName = name;
+          state.tracker.startTime = Date.now();
+          try {
+            var raw = localStorage.getItem("hageruya_c1_profile");
+            if (raw) state.c1Profile = JSON.parse(raw);
+          } catch (e) { /* ignore */ }
+          goToScene("c2_intro");
+        });
+      }
+
+      overlay.addEventListener("click", function (e) {
+        if (e.target === backBtn) return;
+        startCase2();
+      });
+
+      backBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        overlay.classList.remove("visible");
+        dismissSequelHook();
+        AudioEngine.stopBGM();
+        clearSceneHistory();
+        state = createInitialState();
+        var bootEl = $("boot-sequence");
+        var bootLines = $("boot-lines");
+        if (bootEl) bootEl.classList.remove("active");
+        if (bootLines) bootLines.innerHTML = "";
+        var titleContent = document.querySelector(".title-content");
+        if (titleContent) titleContent.classList.remove("boot-active");
+        if (justClearedCase1 && typeof STORY_C2 !== "undefined") {
+          justClearedCase1 = false;
+          switchToCase(2);
+        }
+        updateTitleScreen();
+        updateCaseSelector();
+        showScreen("title");
+        setTimeout(function () { AudioEngine.playBGM("title"); }, 600);
+      });
+    })();
 
     // 初期化：ミュートアイコン同期
     syncSoundIcons();

@@ -289,9 +289,9 @@ const STORY = {
       ],
       quiz: {
         options: [
-          { text: "外部侵入の偽装", correct: true },
           { text: "本当に外から侵入された" },
-          { text: "経年劣化による傷" }
+          { text: "経年劣化による傷" },
+          { text: "外部侵入の偽装", correct: true }
         ],
         failText: "……違う。事実を整理しろ。",
         successText: "──偽装だ。犯人は内部の人間だ。",
@@ -605,8 +605,8 @@ const STORY = {
       ],
       quiz: {
         options: [
-          { text: "CELLAR", correct: true },
           { text: "DOLLAR" },
+          { text: "CELLAR", correct: true },
           { text: "BALLET" }
         ],
         failText: "……違う。もう一度よく見ろ。",
@@ -857,8 +857,8 @@ const STORY = {
       ],
       quiz: {
         options: [
-          { text: "ワインセラー", correct: true },
           { text: "書斎" },
+          { text: "ワインセラー", correct: true },
           { text: "厨房" }
         ],
         failText: "……違う。考え直せ。",
@@ -874,9 +874,9 @@ const STORY = {
       ],
       quiz: {
         options: [
-          { text: "セラーの鍵を持っていた", correct: true },
           { text: "カメラの映像を消せた" },
-          { text: "厨房から薬を持ち込めた" }
+          { text: "厨房から薬を持ち込めた" },
+          { text: "セラーの鍵を持っていた", correct: true }
         ],
         failText: "……違う。セラーに入れた理由を考えろ。",
         successText: "──鍵だ。セラーに入れた人間は限られる。",
@@ -891,8 +891,8 @@ const STORY = {
       ],
       quiz: {
         options: [
-          { text: "赤坂 修（支配人）", correct: true },
           { text: "白石麗華（オーナーの妻）" },
+          { text: "赤坂 修（支配人）", correct: true },
           { text: "緑川健太（シェフ）" }
         ],
         failText: "……違う。",
