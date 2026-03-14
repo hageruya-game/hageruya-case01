@@ -45,6 +45,7 @@
   let isTyping = false;
   let backlog = [];
   let typeTimer = null;
+  var textDelayTimer = null;
   const TYPE_SPEED = 30;
   const TYPE_SPEED_VAR = 15;
   let audioInitialized = false;
@@ -679,6 +680,8 @@
     }
     textIndex = 0;
     els.text.innerHTML = "";
+    clearTimeout(textDelayTimer);
+    textDelayTimer = null;
 
     if (scene.showChapter && !skipChapterCard) {
       showChapterCard(scene.chapter, function () {
@@ -688,7 +691,7 @@
     } else {
       showScreen("game");
       if (scene.textDelay > 0) {
-        setTimeout(showNextParagraph, scene.textDelay);
+        textDelayTimer = setTimeout(showNextParagraph, scene.textDelay);
       } else {
         showNextParagraph();
       }
@@ -814,6 +817,7 @@
 
   /* ---------- Text display ---------- */
   function showNextParagraph() {
+    textDelayTimer = null;
     userScrolled = false;
     if (textIndex >= textQueue.length) {
       onTextComplete();
@@ -902,6 +906,12 @@
   }
 
   function advanceText() {
+    if (textDelayTimer) {
+      clearTimeout(textDelayTimer);
+      textDelayTimer = null;
+      showNextParagraph();
+      return;
+    }
     if (isTyping) { skipTypewriter(); return; }
     AudioEngine.playSFX("tap");
     textIndex++;
@@ -1082,7 +1092,9 @@
 
     if (!answer) return;
 
-    if (puzzle.answers.includes(answer)) {
+    var normalizedAnswer = answer.toUpperCase();
+    var isCorrect = puzzle.answers.some(function (a) { return a.toUpperCase() === normalizedAnswer; });
+    if (isCorrect) {
       // Track solved puzzle
       if (puzzle.id && !state.solvedPuzzles.includes(puzzle.id)) {
         state.solvedPuzzles.push(puzzle.id);

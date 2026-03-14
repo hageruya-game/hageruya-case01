@@ -593,7 +593,7 @@ const STORY = {
       next: "ch2_cipher"
     },
 
-    /* ---- 暗号パズル（3択式） ---- */
+    /* ---- 暗号パズル（入力式） ---- */
     ch2_cipher: {
       chapter: 2,
       text: [
@@ -603,14 +603,10 @@ const STORY = {
         "これは……意識を失う直前に、オーナーが必死に残したメッセージだろうか。",
         "各文字をアルファベット順で一つ前にずらすと──"
       ],
-      quiz: {
-        options: [
-          { text: "DOLLAR" },
-          { text: "CELLAR", correct: true },
-          { text: "BALLET" }
-        ],
+      puzzle: {
+        question: "解読結果を入力せよ",
+        answers: ["CELLAR"],
         failText: "……違う。もう一度よく見ろ。",
-        successText: "── CELLAR。ワインセラーだ。",
         successNext: "ch2_cipher_solved"
       },
       hints: [
