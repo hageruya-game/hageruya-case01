@@ -2581,6 +2581,7 @@
 
       function startCase2() {
         overlay.classList.remove("visible");
+        overlay.style.display = "";  // showCase2Transition のインラインstyle を解除
         AudioEngine.stopBGM();
         clearSceneHistory();
         switchToCase(2);
@@ -2607,6 +2608,7 @@
       backBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         overlay.classList.remove("visible");
+        overlay.style.display = "";  // showCase2Transition のインラインstyle を解除
         dismissSequelHook();
         AudioEngine.stopBGM();
         clearSceneHistory();
