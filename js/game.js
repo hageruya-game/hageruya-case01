@@ -272,12 +272,14 @@
 
   /* ---------- Screen management ---------- */
   function showScreen(name) {
+    trace("showScreen", name);
     Object.values(screens).forEach(function (s) { s.classList.remove("active"); });
     screens[name].classList.add("active");
   }
 
   /* ---------- Scene transition flash ---------- */
   function flashTransition(callback) {
+    trace("flashTransition START");
     sceneTransitioning = true;
     els.sceneFlash.classList.add("active");
     setTimeout(function () {
@@ -285,6 +287,7 @@
       setTimeout(function () {
         els.sceneFlash.classList.remove("active");
         sceneTransitioning = false;
+        trace("flashTransition END, transitioning=false");
       }, 80);
     }, 250);
   }
@@ -420,8 +423,28 @@
     warningTimers.push(setTimeout(finishWarning, 12000));
   }
 
+  /* ---------- Debug trace (CASE_02調査用・修正後に削除) ---------- */
+  var C2_TRACE = true;
+  var traceEl = null;
+  var traceLines = [];
+  function trace() {
+    if (!C2_TRACE || currentCase !== 2) return;
+    var msg = Array.prototype.slice.call(arguments).join(" ");
+    console.log("[C2]", msg);
+    // 画面上にも表示（スマホデバッグ用）
+    traceLines.push(msg);
+    if (traceLines.length > 8) traceLines.shift();
+    if (!traceEl) {
+      traceEl = document.createElement("div");
+      traceEl.style.cssText = "position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);color:#0f0;font:10px monospace;padding:4px;z-index:99999;pointer-events:none;white-space:pre-wrap;max-height:30vh;overflow:hidden;";
+      document.body.appendChild(traceEl);
+    }
+    traceEl.textContent = traceLines.join("\n");
+  }
+
   /* ---------- Scene rendering ---------- */
   function goToScene(sceneId, useFlash) {
+    trace("goToScene", sceneId, "flash=" + !!useFlash, "prevScene=" + state.currentScene, "transitioning=" + sceneTransitioning);
     // CASE_02: ゲームオーバーからの再スタート
     if (sceneId === "c2_restart_trigger") {
       var pName = state.playerName;
@@ -652,6 +675,7 @@
   }
 
   function renderScene(scene, sceneId, skipChapterCard) {
+    trace("renderScene", sceneId, "textDelay=" + scene.textDelay, "showChapter=" + !!scene.showChapter, "textLen=" + (scene.text ? scene.text.length : 0));
     // Chapter label
     var chLabel = activeStory.chapters[scene.chapter];
     els.chapterLabel.textContent = chLabel ? chLabel.label + "　" + chLabel.title : "";
@@ -679,6 +703,7 @@
     isTyping = false;
     clearTimeout(textDelayTimer);
     textDelayTimer = null;
+    trace("textQueue ready", "len=" + textQueue.length, "first=" + (textQueue[0] || "").substring(0, 30));
 
     if (scene.showChapter && !skipChapterCard) {
       showChapterCard(scene.chapter, function () {
@@ -739,6 +764,7 @@
   function showNextParagraph() {
     textDelayTimer = null;
     userScrolled = false;
+    trace("showNextParagraph", "scene=" + state.currentScene, "textIndex=" + textIndex, "queueLen=" + textQueue.length);
     if (textIndex >= textQueue.length) {
       onTextComplete();
       return;
@@ -840,6 +866,7 @@
   }
 
   function advanceText() {
+    trace("advanceText", "scene=" + state.currentScene, "textIndex=" + textIndex, "queueLen=" + textQueue.length, "isTyping=" + isTyping, "hasDelayTimer=" + !!textDelayTimer);
     if (textDelayTimer) {
       clearTimeout(textDelayTimer);
       textDelayTimer = null;
@@ -870,6 +897,7 @@
   function onTextComplete() {
     els.tap.classList.remove("visible");
     var scene = activeStory.scenes[state.currentScene];
+    trace("onTextComplete", "scene=" + state.currentScene, "next=" + resolveNext(scene), "hasChoices=" + hasVisibleChoices(scene), "hasQuiz=" + !!scene.quiz);
 
     if (hasVisibleChoices(scene)) {
       showChoices(scene.choices);
@@ -1723,6 +1751,7 @@
         });
         // 名前入力なしで自動進行
         bootTimers.push(setTimeout(function () {
+          trace("boot cleanup firing", "c2Name=" + c2Name);
           bootTimers.forEach(clearTimeout);
           bootTimers = [];
           boot.classList.remove("active");
@@ -2243,6 +2272,8 @@
     function startNewGame() {
       // 修正2: デバッグ時は boot 演出をスキップし名前入力のみ
       var bootCallback = function (name) {
+        trace("bootCallback fired", "name=" + name, "case=" + currentCase, "transitioning=" + sceneTransitioning);
+        sceneTransitioning = false; // 安全リセット: boot後に残留していた場合に備える
         AudioEngine.stopBGM();
         state = createInitialState();
         state.playerName = name;
@@ -2306,7 +2337,9 @@
     $("btn-continue").addEventListener("click", function () {
       ensureAudio();
       AudioEngine.stopBGM();
+      sceneTransitioning = false; // 安全リセット
       if (loadFromSlot("auto")) {
+        trace("btn-continue", "loadedScene=" + state.currentScene);
         clearSceneHistory();
         updateSuspicionIndicator();
         updateInsightIndicator();
@@ -2377,13 +2410,14 @@
 
     function handleTextTap() {
       ensureAudio();
-      if (sceneTransitioning) return;
-      if (els.choices.classList.contains("visible")) return;
-      if (els.puzzle.classList.contains("visible")) return;
-      if (els.evidence.classList.contains("visible")) return;
+      trace("handleTextTap", "scene=" + state.currentScene, "textIndex=" + textIndex, "queueLen=" + textQueue.length, "transitioning=" + sceneTransitioning, "isTyping=" + isTyping);
+      if (sceneTransitioning) { trace("BLOCKED: sceneTransitioning"); return; }
+      if (els.choices.classList.contains("visible")) { trace("BLOCKED: choices visible"); return; }
+      if (els.puzzle.classList.contains("visible")) { trace("BLOCKED: puzzle visible"); return; }
+      if (els.evidence.classList.contains("visible")) { trace("BLOCKED: evidence visible"); return; }
 
       var scene = activeStory.scenes[state.currentScene];
-      if (!scene) return;
+      if (!scene) { trace("BLOCKED: scene not found for", state.currentScene, "activeStory=", activeStory === STORY_C2 ? "C2" : "C1"); return; }
 
       if (textIndex < textQueue.length) {
         advanceText();
@@ -2500,6 +2534,8 @@
       clearSceneHistory();
       showScreen("title");
       showBootSequence(function (name) {
+        trace("btn-restart bootCallback", "name=" + name, "transitioning=" + sceneTransitioning);
+        sceneTransitioning = false; // 安全リセット
         state = createInitialState();
         state.playerName = name;
         state.tracker.startTime = Date.now();
@@ -2550,6 +2586,8 @@
         switchToCase(2);
         showScreen("title");
         showBootSequence(function (name) {
+          trace("startCase2 bootCallback", "name=" + name, "transitioning=" + sceneTransitioning);
+          sceneTransitioning = false; // 安全リセット
           state = createInitialState();
           state.playerName = name;
           state.tracker.startTime = Date.now();
