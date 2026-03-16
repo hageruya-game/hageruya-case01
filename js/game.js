@@ -675,6 +675,8 @@
     }
     textIndex = 0;
     els.text.innerHTML = "";
+    clearTimeout(typeTimer);
+    isTyping = false;
     clearTimeout(textDelayTimer);
     textDelayTimer = null;
 
@@ -800,7 +802,14 @@
       } else {
         isTyping = false;
         span.classList.remove("typing-cursor");
-        els.tap.classList.add("visible");
+        // textDelay シーン: 最終行以外は自動送り（タップ不要）
+        var delayScene = activeStory.scenes[state.currentScene];
+        if (delayScene && delayScene.textDelay > 0 && textIndex < textQueue.length - 1) {
+          textIndex++;
+          textDelayTimer = setTimeout(showNextParagraph, delayScene.textDelay);
+        } else {
+          els.tap.classList.add("visible");
+        }
       }
     }
 
@@ -820,7 +829,14 @@
       span.classList.remove("typing-cursor");
     }
     isTyping = false;
-    els.tap.classList.add("visible");
+    // textDelay シーン: スキップ後も自動送り
+    var delayScene = activeStory.scenes[state.currentScene];
+    if (delayScene && delayScene.textDelay > 0 && textIndex < textQueue.length - 1) {
+      textIndex++;
+      textDelayTimer = setTimeout(showNextParagraph, delayScene.textDelay);
+    } else {
+      els.tap.classList.add("visible");
+    }
   }
 
   function advanceText() {
